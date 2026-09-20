@@ -1,0 +1,454 @@
+{
+  "fixture": true,
+  "fixture_notice": "SYNTHETIC DEVELOPMENT FIXTURE \u2014 all transactions, counterparties, excerpts and conclusions are invented for UI testing. Only the supplied development seed is real. No attribution is verified.",
+  "investigation": {
+    "id": "wormhole-mock",
+    "seed_entity": "seed",
+    "objective": "Assess the fixture fund flow and distinguish direct control from an intermediary relationship.",
+    "created_at": "2022-02-03T12:00:00Z",
+    "status": "ready",
+    "summary": "Simulated Wormhole development case. Fund-flow observations do not establish who controlled any address."
+  },
+  "entities": [
+    {
+      "id": "seed",
+      "entity_type": "wallet",
+      "chain": "ethereum",
+      "label": "Development seed",
+      "value": "0x629e7Da20197a5429d30da36E77d06CdF796b71A",
+      "metadata": {
+        "fixture": true
+      }
+    },
+    {
+      "id": "bridge",
+      "entity_type": "bridge",
+      "chain": "ethereum",
+      "label": "Bridge contract \u00b7 fixture",
+      "value": "fixture:bridge",
+      "metadata": {
+        "fixture": true
+      }
+    },
+    {
+      "id": "counterparty",
+      "entity_type": "wallet",
+      "chain": "ethereum",
+      "label": "Counterparty B \u00b7 fixture",
+      "value": "fixture:wallet-b",
+      "metadata": {
+        "fixture": true
+      }
+    },
+    {
+      "id": "pool",
+      "entity_type": "contract",
+      "chain": "ethereum",
+      "label": "Liquidity pool \u00b7 fixture",
+      "value": "fixture:pool",
+      "metadata": {
+        "fixture": true
+      }
+    }
+  ],
+  "transactions": [
+    {
+      "id": "tx-bridge",
+      "sender": "bridge",
+      "receiver": "seed",
+      "amount": "80000",
+      "asset": "ETH",
+      "block_number": 14100001,
+      "timestamp": "2022-02-02T19:00:00Z",
+      "chain": "ethereum",
+      "tx_hash": "fixture:tx-bridge",
+      "protocol": null,
+      "metadata": {
+        "fixture": true,
+        "not_a_real_transaction": true
+      }
+    },
+    {
+      "id": "tx-out",
+      "sender": "seed",
+      "receiver": "counterparty",
+      "amount": "15000",
+      "asset": "ETH",
+      "block_number": 14100012,
+      "timestamp": "2022-02-02T19:03:00Z",
+      "chain": "ethereum",
+      "tx_hash": "fixture:tx-out",
+      "protocol": null,
+      "metadata": {
+        "fixture": true,
+        "not_a_real_transaction": true
+      }
+    },
+    {
+      "id": "tx-pool",
+      "sender": "seed",
+      "receiver": "pool",
+      "amount": "5000",
+      "asset": "ETH",
+      "block_number": 14100020,
+      "timestamp": "2022-02-02T19:05:00Z",
+      "chain": "ethereum",
+      "tx_hash": "fixture:tx-pool",
+      "protocol": null,
+      "metadata": {
+        "fixture": true,
+        "not_a_real_transaction": true
+      }
+    }
+  ],
+  "evidence": [
+    {
+      "id": "e-flow",
+      "investigation_id": "wormhole-mock",
+      "evidence_type": "blockchain_observation",
+      "title": "Seed sends to counterparty B",
+      "description": "Fixture transfer records an outgoing payment. Receipt alone does not prove shared control.",
+      "source_type": "mock_chain",
+      "source_url": null,
+      "source_identifier": "fixture:tx-out",
+      "raw_data": {
+        "fixture": true,
+        "transaction_id": "tx-out",
+        "amount": "15000",
+        "asset": "ETH",
+        "transaction": {
+          "id": "tx-out",
+          "sender": "seed",
+          "receiver": "counterparty",
+          "amount": "15000",
+          "asset": "ETH",
+          "block_number": 14100012,
+          "timestamp": "2022-02-02T19:03:00Z",
+          "chain": "ethereum",
+          "tx_hash": "fixture:tx-out",
+          "protocol": null,
+          "metadata": {
+            "fixture": true,
+            "not_a_real_transaction": true
+          }
+        }
+      },
+      "collected_at": "2022-02-03T12:00:00Z",
+      "reliability": "HIGH",
+      "directness": "direct",
+      "reproducible": true,
+      "linked_entity_ids": [
+        "seed",
+        "counterparty"
+      ]
+    },
+    {
+      "id": "e-bridge",
+      "investigation_id": "wormhole-mock",
+      "evidence_type": "blockchain_observation",
+      "title": "Bridge-to-seed transfer",
+      "description": "Synthetic bridge receipt; no cross-chain matching record is supplied.",
+      "source_type": "mock_chain",
+      "source_url": null,
+      "source_identifier": "fixture:tx-bridge",
+      "raw_data": {
+        "fixture": true,
+        "transaction_id": "tx-bridge",
+        "transaction": {
+          "id": "tx-bridge",
+          "sender": "bridge",
+          "receiver": "seed",
+          "amount": "80000",
+          "asset": "ETH",
+          "block_number": 14100001,
+          "timestamp": "2022-02-02T19:00:00Z",
+          "chain": "ethereum",
+          "tx_hash": "fixture:tx-bridge",
+          "protocol": null,
+          "metadata": {
+            "fixture": true,
+            "not_a_real_transaction": true
+          }
+        }
+      },
+      "collected_at": "2022-02-03T12:00:00Z",
+      "reliability": "HIGH",
+      "directness": "direct",
+      "reproducible": true,
+      "linked_entity_ids": [
+        "seed",
+        "bridge"
+      ]
+    },
+    {
+      "id": "e-attribution",
+      "investigation_id": "wormhole-mock",
+      "evidence_type": "external_attribution",
+      "title": "Unverified attribution note",
+      "description": "An invented report labels the seed as exploit-related. This is a demo assertion, not a verified source.",
+      "source_type": "mock_document",
+      "source_url": null,
+      "source_identifier": "fixture:report-a",
+      "raw_data": {
+        "fixture": true,
+        "excerpt": "[SYNTHETIC] The seed may be related to the bridge incident."
+      },
+      "collected_at": "2022-02-03T12:00:00Z",
+      "reliability": "LOW",
+      "directness": "indirect",
+      "reproducible": true,
+      "linked_entity_ids": [
+        "seed"
+      ]
+    },
+    {
+      "id": "e-osint",
+      "investigation_id": "wormhole-mock",
+      "evidence_type": "osint",
+      "title": "Counterparty service alternative",
+      "description": "A separate invented note describes counterparty B as a pooled service. This challenges common-control inference.",
+      "source_type": "mock_document",
+      "source_url": null,
+      "source_identifier": "fixture:report-b",
+      "raw_data": {
+        "fixture": true,
+        "excerpt": "[SYNTHETIC] B may aggregate unrelated customer funds."
+      },
+      "collected_at": "2022-02-03T12:00:00Z",
+      "reliability": "LOW",
+      "directness": "indirect",
+      "reproducible": true,
+      "linked_entity_ids": [
+        "counterparty"
+      ]
+    },
+    {
+      "id": "e-gap",
+      "investigation_id": "wormhole-mock",
+      "evidence_type": "analyst_input",
+      "title": "Control attribution remains unresolved",
+      "description": "Fixture audit contains no signed ownership proof or independently verified control records.",
+      "source_type": "mock_document",
+      "source_url": null,
+      "source_identifier": "fixture:coverage-audit",
+      "raw_data": {
+        "fixture": true,
+        "missing": [
+          "ownership proof",
+          "cross-chain match",
+          "independent attribution"
+        ]
+      },
+      "collected_at": "2022-02-03T12:00:00Z",
+      "reliability": "LOW",
+      "directness": "indirect",
+      "reproducible": true,
+      "linked_entity_ids": [
+        "seed",
+        "counterparty"
+      ]
+    },
+    {
+      "id": "e-pool",
+      "investigation_id": "wormhole-mock",
+      "evidence_type": "blockchain_observation",
+      "title": "Seed-to-pool transfer",
+      "description": "Synthetic pool transfer. Contract interaction does not establish ownership or intent.",
+      "source_type": "mock_chain",
+      "source_url": null,
+      "source_identifier": "fixture:tx-pool",
+      "raw_data": {
+        "fixture": true,
+        "transaction_id": "tx-pool",
+        "transaction": {
+          "id": "tx-pool",
+          "sender": "seed",
+          "receiver": "pool",
+          "amount": "5000",
+          "asset": "ETH",
+          "block_number": 14100020,
+          "timestamp": "2022-02-02T19:05:00Z",
+          "chain": "ethereum",
+          "tx_hash": "fixture:tx-pool",
+          "protocol": null,
+          "metadata": {
+            "fixture": true,
+            "not_a_real_transaction": true
+          }
+        }
+      },
+      "collected_at": "2022-02-03T12:00:00Z",
+      "reliability": "HIGH",
+      "directness": "direct",
+      "reproducible": true,
+      "linked_entity_ids": [
+        "seed",
+        "pool"
+      ]
+    }
+  ],
+  "claims": [
+    {
+      "id": "c-flow",
+      "investigation_id": "wormhole-mock",
+      "statement": "The seed transferred fixture funds to counterparty B.",
+      "claim_type": "observation",
+      "status": "supported",
+      "confidence": "MEDIUM",
+      "supporting_evidence_ids": [
+        "e-flow"
+      ],
+      "contradicting_evidence_ids": [],
+      "required_for_hypothesis_ids": [
+        "h-control",
+        "h-flow"
+      ]
+    },
+    {
+      "id": "c-attribution",
+      "investigation_id": "wormhole-mock",
+      "statement": "The seed is associated with the incident described in the fixture note.",
+      "claim_type": "attribution",
+      "status": "partially_supported",
+      "confidence": "LOW",
+      "supporting_evidence_ids": [
+        "e-attribution"
+      ],
+      "contradicting_evidence_ids": [],
+      "required_for_hypothesis_ids": [
+        "h-control"
+      ]
+    },
+    {
+      "id": "c-control",
+      "investigation_id": "wormhole-mock",
+      "statement": "The seed and B are controlled by the same actor.",
+      "claim_type": "inference",
+      "status": "disputed",
+      "confidence": "LOW",
+      "supporting_evidence_ids": [
+        "e-attribution"
+      ],
+      "contradicting_evidence_ids": [
+        "e-osint"
+      ],
+      "required_for_hypothesis_ids": [
+        "h-control"
+      ]
+    },
+    {
+      "id": "c-service",
+      "investigation_id": "wormhole-mock",
+      "statement": "B could be a service used by unrelated actors.",
+      "claim_type": "inference",
+      "status": "partially_supported",
+      "confidence": "LOW",
+      "supporting_evidence_ids": [
+        "e-osint"
+      ],
+      "contradicting_evidence_ids": [],
+      "required_for_hypothesis_ids": [
+        "h-flow"
+      ]
+    },
+    {
+      "id": "c-gap",
+      "investigation_id": "wormhole-mock",
+      "statement": "Independent evidence establishes the control relationship between the seed and B.",
+      "claim_type": "inference",
+      "status": "unknown",
+      "confidence": "LOW",
+      "supporting_evidence_ids": [
+        "e-gap"
+      ],
+      "contradicting_evidence_ids": [],
+      "required_for_hypothesis_ids": [
+        "h-control",
+        "h-flow"
+      ]
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "h-control",
+      "title": "Common control",
+      "description": "The seed and counterparty may share a controller. Fixture flow alone is insufficient.",
+      "supporting_claim_ids": [
+        "c-flow",
+        "c-attribution",
+        "c-control"
+      ],
+      "contradicting_claim_ids": [
+        "c-service"
+      ],
+      "missing_claim_ids": [
+        "c-gap"
+      ],
+      "investigation_id": "wormhole-mock",
+      "confidence": "LOW"
+    },
+    {
+      "id": "h-flow",
+      "title": "Transfer to an intermediary",
+      "description": "Counterparty B may be a service or intermediary; a transfer need not imply common control.",
+      "supporting_claim_ids": [
+        "c-flow",
+        "c-service"
+      ],
+      "contradicting_claim_ids": [
+        "c-control"
+      ],
+      "missing_claim_ids": [
+        "c-gap"
+      ],
+      "investigation_id": "wormhole-mock",
+      "confidence": "LOW"
+    }
+  ],
+  "actions": [
+    {
+      "id": "a-verify",
+      "title": "Verify attribution with a second source",
+      "description": "Simulate reading an independent fixture note about control. No public source is fetched.",
+      "action_type": "verify_attribution",
+      "target_entity_id": "seed",
+      "hypothesis_discrimination_score": 9,
+      "expected_evidence_quality_score": 8,
+      "ease_score": 8,
+      "source_reliability_score": 7,
+      "rationale": "Tests the weakest attribution dependency and distinguishes control from mere transfer.",
+      "investigation_id": "wormhole-mock",
+      "status": "pending"
+    },
+    {
+      "id": "a-expand",
+      "title": "Expand counterparty B by one hop",
+      "description": "Add one fixed synthetic transfer to the graph.",
+      "action_type": "expand_hop",
+      "target_entity_id": "counterparty",
+      "hypothesis_discrimination_score": 7,
+      "expected_evidence_quality_score": 8,
+      "ease_score": 8,
+      "source_reliability_score": 9,
+      "rationale": "Provides another fixture observation of B's activity, without resolving identity.",
+      "investigation_id": "wormhole-mock",
+      "status": "pending"
+    },
+    {
+      "id": "a-bridge",
+      "title": "Inspect bridge destination coverage",
+      "description": "Simulate checking whether a matching destination record is present.",
+      "action_type": "inspect_bridge",
+      "target_entity_id": "bridge",
+      "hypothesis_discrimination_score": 6,
+      "expected_evidence_quality_score": 7,
+      "ease_score": 6,
+      "source_reliability_score": 8,
+      "rationale": "Documents the cross-chain evidence gap rather than assuming a destination.",
+      "investigation_id": "wormhole-mock",
+      "status": "pending"
+    }
+  ],
+  "revision": 1,
+  "changes": []
+}
