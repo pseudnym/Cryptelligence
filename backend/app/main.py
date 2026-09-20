@@ -34,10 +34,11 @@ def create_app(database_path: str | None = None, ethereum_provider=None, ethereu
         search_settings = osint_settings or OSINTSettings.from_env()
         search_tool = LiveOSINTTool(osint_provider or LiveSearchProvider(search_settings), search_settings,
                                     source_fetcher or PublicPageFetcher(search_settings))
-        from .services.gemini import GeminiSettings, GeminiClient, GeminiEngine
+        from .services.gemini import GeminiSettings, GeminiClient, OllamaClient, GeminiEngine
         from .services.gemini_tools import CaseReadTool
         ai_settings = gemini_settings or GeminiSettings.from_env()
-        ai = GeminiEngine(gemini_client or GeminiClient(ai_settings), ai_settings)
+        ai_client = gemini_client or (OllamaClient(ai_settings) if ai_settings.provider == "ollama" else GeminiClient(ai_settings))
+        ai = GeminiEngine(ai_client, ai_settings)
         from .services.solana_provider import SolanaSettings, SolanaRPCProvider
         from .services.solana_tool import SolanaInvestigationTool
         from .services.chains import seed_entity

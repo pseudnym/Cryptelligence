@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 from app.main import create_app
 from app.models.domain import Case
 from app.schemas.gemini import AssessmentOutput, ToolRequest
-from app.services.gemini import GeminiClient, GeminiSettings, GeminiError, validate_assessment, SYSTEM
+from app.services.gemini import GeminiClient, OllamaClient, GeminiSettings, GeminiError, validate_assessment, SYSTEM
 from app.services.gemini_context import context_for
 from app.services.gemini_tools import validate_request, make_action
 from app.services.osint_provider import MockOSINTProvider
@@ -184,10 +184,23 @@ def test_transport_schema_usage_and_thought_filter():
         assert "test-gemini-secret" not in str(request.url)
         body=json.loads(request.content)
         assert body["generationConfig"]["responseJsonSchema"]["additionalProperties"] is False
+        assert "anyOf" not in json.dumps(body["generationConfig"]["responseJsonSchema"])
         assert "execute_shell" not in body["contents"][0]["parts"][0]["text"]
         return httpx.Response(200,json={"candidates":[{"finishReason":"STOP","content":{"parts":[{"text":"private reasoning", "thought":True},{"text":"{}"}]}}],"usageMetadata":{"totalTokenCount":30,"secret":"ignore"}})
     text,usage=GeminiClient(AI,httpx.MockTransport(handler)).generate("plan",{},AssessmentOutput)
     assert text == "{}" and usage == {"totalTokenCount":30}
+
+def test_ollama_transport_uses_structured_schema():
+    def handler(request):
+        body=json.loads(request.content)
+        assert request.url.path == "/api/chat"
+        assert body["model"] == "gemma3:4b"
+        assert body["format"]["additionalProperties"] is False
+        assert "anyOf" not in json.dumps(body["format"])
+        return httpx.Response(200,json={"message":{"content":"{}"},"prompt_eval_count":10,"eval_count":20})
+    settings=replace(AI, model="gemma3:4b", provider="ollama", base_url="http://ollama")
+    text,usage=OllamaClient(settings,httpx.MockTransport(handler)).generate("plan",{},AssessmentOutput)
+    assert text == "{}" and usage == {"promptTokenCount":10,"candidatesTokenCount":20,"totalTokenCount":30}
 
 @pytest.mark.parametrize("failure", ["timeout", "rate", "malformed", "auth"])
 def test_transport_errors_are_safe_and_bounded(failure):

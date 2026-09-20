@@ -52,18 +52,49 @@ class GeminiSettings:
     timeout: float = 45
     retries: int = 1
     max_auto_steps: int = 5
+    provider: str = "gemini"
+    base_url: str = "http://127.0.0.1:11434"
+    output_tokens: int = 12000
     @classmethod
     def from_env(cls):
+        provider = os.getenv("AI_PROVIDER", "gemini").strip().lower()
         key = os.getenv("GEMINI_API_KEY", "").strip()
-        return cls(api_key=key, model=os.getenv("GEMINI_MODEL", "gemini-3.6-flash"),
-            enabled=os.getenv("GEMINI_ENABLED", "true" if key else "false").lower() == "true",
-            timeout=max(1, min(120, float(os.getenv("GEMINI_TIMEOUT_SECONDS", "45")))),
+        default_enabled = "true" if key or provider == "ollama" else "false"
+        return cls(api_key=key, model=os.getenv("OLLAMA_MODEL" if provider == "ollama" else "GEMINI_MODEL",
+                "gemma3:4b" if provider == "ollama" else "gemini-3.6-flash"),
+            enabled=os.getenv("GEMINI_ENABLED", default_enabled).lower() == "true",
+            timeout=max(1, min(120, float(os.getenv("OLLAMA_TIMEOUT_SECONDS" if provider == "ollama" else "GEMINI_TIMEOUT_SECONDS",
+                "120" if provider == "ollama" else "45")))),
             retries=max(0, min(2, int(os.getenv("GEMINI_RETRIES", "1")))),
-            max_auto_steps=max(0, min(10, int(os.getenv("MAX_AUTO_STEPS", "5")))))
+            max_auto_steps=max(0, min(10, int(os.getenv("MAX_AUTO_STEPS", "5")))),
+            provider=provider,
+            base_url=os.getenv("OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/"),
+            output_tokens=max(512, min(12000, int(os.getenv("OLLAMA_NUM_PREDICT", "4096")))) if provider == "ollama" else 12000)
 
 class GeminiClient:
     def __init__(self, settings, transport=None, sleeper=time.sleep):
         self.settings, self.transport, self.sleeper = settings, transport, sleeper
+
+    @staticmethod
+    def response_schema(schema):
+        def convert(value):
+            if isinstance(value, list):
+                return [convert(item) for item in value]
+            if not isinstance(value, dict):
+                return value
+            if "anyOf" in value and len(value["anyOf"]) == 2:
+                nullable = [item for item in value["anyOf"] if item == {"type": "null"}]
+                alternatives = [item for item in value["anyOf"] if item != {"type": "null"}]
+                if nullable and len(alternatives) == 1:
+                    converted = convert(alternatives[0])
+                    converted["nullable"] = True
+                    if "title" in value:
+                        converted["title"] = value["title"]
+                    return converted
+            return {key: convert(item) for key, item in value.items() if key != "anyOf"}
+
+        return convert(schema.model_json_schema())
+
     def generate(self, task, context, schema, correction=None):
         if not self.settings.api_key:
             raise GeminiError("configuration", "Gemini needs GEMINI_API_KEY in backend/.env. Restart the backend after configuration.")
@@ -72,7 +103,7 @@ class GeminiClient:
         body = dict(systemInstruction={"parts": [{"text": SYSTEM}]},
             contents=[{"role": "user", "parts": [{"text": json.dumps(dict(task=task, available_tools=definitions(),
                 case_state=context, correction=correction))}]}],
-            generationConfig={"responseMimeType": "application/json", "responseJsonSchema": schema.model_json_schema(),
+            generationConfig={"responseMimeType": "application/json", "responseJsonSchema": self.response_schema(schema),
                               "maxOutputTokens": 12000})
         for attempt in range(self.settings.retries + 1):
             try:
@@ -106,6 +137,54 @@ class GeminiClient:
                 error = GeminiError("timeout", "Gemini timed out. Existing evidence and assessment are preserved; retry analysis.")
             except httpx.HTTPError:
                 error = GeminiError("connection", "Gemini connection failed. Existing evidence is preserved.")
+            if attempt == self.settings.retries: raise error from None
+            self.sleeper(min(4, .5 * 2 ** attempt))
+
+
+class OllamaClient:
+    def __init__(self, settings, transport=None, sleeper=time.sleep):
+        self.settings, self.transport, self.sleeper = settings, transport, sleeper
+
+    def generate(self, task, context, schema, correction=None):
+        local_tools = [{key: tool[key] for key in ("name", "description", "expected_evidence_type")}
+                       for tool in definitions()]
+        body = dict(model=self.settings.model, stream=False,
+            messages=[{"role": "system", "content": SYSTEM + "\nUse concise JSON only; never include analysis or commentary."},
+                      {"role": "user", "content": json.dumps(dict(task=task, available_tools=local_tools,
+                          case_state=context, correction=correction))}],
+            format=GeminiClient.response_schema(schema),
+            options={"num_ctx": 8192, "num_predict": self.settings.output_tokens})
+        for attempt in range(self.settings.retries + 1):
+            try:
+                with httpx.Client(timeout=self.settings.timeout, transport=self.transport) as client:
+                    response = client.post(self.settings.base_url + "/api/chat", json=body)
+                if response.status_code == 404:
+                    raise GeminiError("model_unavailable", "Ollama model is unavailable. Run `ollama pull " + self.settings.model + "`.")
+                if response.status_code == 429 or response.status_code >= 500:
+                    error = GeminiError("unavailable", "Ollama is busy or unavailable. Check that Ollama is running and retry.")
+                elif response.status_code != 200:
+                    raise GeminiError("request", "Ollama rejected the structured-output request.")
+                else:
+                    if len(response.content) > 1_000_000:
+                        raise GeminiError("malformed", "Ollama response exceeded the output limit.")
+                    try:
+                        data = response.json()
+                        text = data["message"]["content"]
+                        if not isinstance(text, str) or not text.strip(): raise ValueError()
+                        usage = {key: value for key, value in {
+                            "promptTokenCount": data.get("prompt_eval_count"),
+                            "candidatesTokenCount": data.get("eval_count"),
+                        }.items() if isinstance(value, int)}
+                        if usage:
+                            usage["totalTokenCount"] = sum(usage.values())
+                        logger.info("Ollama usage task=%s model=%s tokens=%s", task, self.settings.model, usage)
+                        return text, usage
+                    except (ValueError, TypeError, KeyError, AttributeError):
+                        raise GeminiError("malformed", "Ollama returned incomplete or malformed structured output.") from None
+            except httpx.TimeoutException:
+                error = GeminiError("timeout", "Ollama timed out. Existing evidence and assessment are preserved; retry analysis.")
+            except httpx.HTTPError:
+                error = GeminiError("connection", "Ollama connection failed. Start Ollama and retry.")
             if attempt == self.settings.retries: raise error from None
             self.sleeper(min(4, .5 * 2 ** attempt))
 

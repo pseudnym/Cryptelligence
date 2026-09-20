@@ -26,6 +26,8 @@ Open **http://127.0.0.1:5173**. If an older backend is already running, restart 
 
 For LIVE mode, copy backend/.env.example to backend/.env (merge settings if it already exists), then restart the backend. The example uses the public Ethereum Blockscout v2 endpoint, validated without a key. For its PRO gateway, configure the documented URL and private bearer key in the environment. Never commit backend/.env.
 
+Gemini reasoning is optional. To run reasoning locally with Ollama, install Ollama, run `ollama pull gemma3:4b`, and set `AI_PROVIDER=ollama` in `backend/.env`; the local defaults use `http://127.0.0.1:11434` and `gemma3:4b`. Gemini remains available with `AI_PROVIDER=gemini` and `GEMINI_API_KEY`.
+
 The start screen accepts 1–10 Ethereum or Solana wallet addresses in LIVE mode and a required investigation question. The development example is prefilled. Choose the data mode and click **Start investigation**. In FIXTURE mode, run the source check. In LIVE mode, select a wallet in the graph, then **Expand inbound**, **Expand outbound**, or **Inspect counterparty**. All pivots add evidence to the same case. New evidence appears before the revised assessment and next recommendation.
 
 SQLite is created automatically at `backend/data/investigations.sqlite3`. Optional configuration: copy `backend/.env.example` to `backend/.env` and set `DATABASE_PATH`. Use one backend process. The URL preserves the investigation ID; refreshing resumes it.
